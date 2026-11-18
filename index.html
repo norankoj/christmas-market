@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Christmas Market 초대장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+<style>
+/* --W/--H: 포스터(3508x4961) 표시 크기 (화면 안에 다 들어오게, 가운데 정렬) */
+:root{--cream:#f2e8dc;--ink:#3a2a22;--wine:#311218;
+  --W:min(100vw,70.7svh);--H:calc(var(--W)*1.4142);
+  --lift:0px}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:linear-gradient(#35231f 30svh,var(--wine) 70svh) var(--wine);color:var(--cream);font-family:'Gowun Batang',serif}
+#snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:7}
+
+/* ================= 1막: 떠 있는 봉투 → 열림 → 포스터 ================= */
+#intro{position:fixed;inset:0;z-index:2;
+  transform-origin:0 0;   /* --tx/--ty/--s: 포스터가 마켓 배경 그림과 정확히 겹치는 위치 (JS에서 계산) */
+  animation:in 1s ease-out both,align 1.6s cubic-bezier(.45,0,.25,1) 6.6s both,out .7s ease 8.3s both}
+.float{position:absolute;inset:0;animation:bob 3s ease-in-out 2}   /* 두 번 떠다니고 제자리에서 멈춤 → 겹칠 때 어긋나지 않게 */
+.box{position:absolute;left:50%;top:50%;width:var(--W);height:var(--H);
+  margin:calc(var(--H)/-2) 0 0 calc(var(--W)/-2);perspective:1200px;
+  animation:settle 2.2s cubic-bezier(.65,0,.35,1) 3.4s both}
+.box img,.box>svg{position:absolute;inset:0;width:100%;height:100%}
+/* 봉투 안에 있는 동안 편지가 봉투 아래로 삐져나오지 않게 */
+.pocket{position:absolute;inset:0;z-index:1;clip-path:inset(-100% -50% 1% -50%)}   /* 아래 1%는 봉투가 확실히 덮게 */
+/* 포스터 한 장을 조각내서 쓴다. 좌표는 포스터에서 직접 잰 값(%) */
+.p-top{clip-path:inset(0 0 93.6% 0);animation:in 1.2s ease-out 4.4s both,out .9s ease 6.4s both}
+.p-letter{animation:rise 2.1s cubic-bezier(.6,0,.2,1) 3.4s both;
+  clip-path:polygon(0 6.4%,100% 6.4%,100% 51.28%,94.3% 52.51%,88.6% 56.38%,80.05% 62.41%,71.49% 68.35%,62.94% 74.42%,50% 82.4%,37.06% 74.14%,31.36% 70.17%,22.81% 64.26%,14.25% 58.25%,5.7% 52.57%,0 50.86%)}
+.p-env{z-index:3;animation:out .9s ease 6.4s both;
+  clip-path:polygon(0 50.86%,5.7% 52.57%,14.25% 58.25%,22.81% 64.26%,31.36% 70.17%,37.06% 74.14%,50% 82.4%,62.94% 74.42%,71.49% 68.35%,80.05% 62.41%,88.6% 56.38%,94.3% 52.51%,100% 51.28%,100% 100%,0 100%)}
+.p-seal{z-index:5;clip-path:circle(7.9% at 50% 77.2%);animation:out .9s ease 6.4s both}
+/* 닫힌 봉투에서는 포스터 아래 문구를 봉투색으로 가렸다가, 포스터가 다 나오면 보이게 */
+.p-hide{position:absolute;left:16%;right:16%;top:88.5%;height:9.5%;z-index:6;background:#321016;
+  box-shadow:0 0 14px 10px #321016;animation:out 1s ease 4.8s both}
+.p-flap{z-index:4;transform-origin:50% 51%;overflow:visible;
+  animation:flip 1.4s cubic-bezier(.5,0,.3,1) 2.4s both,out .8s linear 4.6s both}
+
+#burst{position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden}
+#burst i{position:absolute;left:50%;top:50svh;animation:fly 2.4s cubic-bezier(.16,1,.3,1) var(--t) both}
+#burst svg{display:block;width:100%}
+#glow{position:fixed;inset:0;z-index:6;pointer-events:none;
+  background:radial-gradient(circle at 50% 55%,rgba(255,242,210,1),rgba(255,226,160,.6) 35%,transparent 70%);
+  animation:glow 7s linear 2.4s both}
+
+/* ================= 2막: 마을 입구를 지나 3D 거리 안으로 걸어 들어감 =================
+   #stage는 375x812 기준으로 그리고 화면 높이에 맞춰 통째로 확대한다(JS).
+   #world는 카메라: 원근 시점(눈 위치)을 축으로 앞으로 이동·회전한다 */
+#walk{position:fixed;inset:0;z-index:4;overflow:hidden;
+  background:linear-gradient(var(--cream) 50%,#f7f1e7);
+  animation:in .7s ease 7.9s both}
+#stage{position:absolute;left:50%;top:50%;height:812px;margin-top:-406px;
+  perspective:700px;perspective-origin:50% 45%}
+#world{position:absolute;left:50%;top:560px;width:0;height:0;
+  transform-style:preserve-3d;transform-origin:0 -195px 700px}
+#world>div{position:absolute;left:0;top:0;transform-origin:50% 100%;backface-visibility:hidden;transform-style:preserve-3d}
+/* 팝업: 바닥에 누워 있던 그림이 하나씩 일어선다 (--pd: 시작 시각) */
+.pu{width:100%;height:100%;transform-origin:50% 100%;animation:pu 1.3s cubic-bezier(.3,1.3,.5,1) var(--pd) both}
+#world svg{display:block;width:100%;height:100%;overflow:visible}
+#world .ground{transform-origin:50% 0;backface-visibility:visible;animation:in 1s ease-out 8.2s both;
+  background:linear-gradient(90deg,#fbf7ee 38%,#ebe0cf 45% 55%,#fbf7ee 62%)}
+/* 배경 = 포스터의 마을 그림(포스터 x7~93%, y23~66%, MARKET 글씨와 트리는 지운 사본). 위·양옆은 종이색으로 번진다 */
+.sky{position:absolute;left:50%;width:min(100%,600px);margin-left:calc(min(100%,600px) / -2);bottom:402px;aspect-ratio:3017/2133;overflow:hidden;transform-origin:50% 100%;
+  -webkit-mask:linear-gradient(transparent,#000 12%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);-webkit-mask-composite:source-in;
+  mask:linear-gradient(transparent,#000 12%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-composite:intersect}
+.sky img{position:absolute;width:116.28%;left:-8.14%;top:0;transform:translateY(-23%)}
+/* 앞쪽 3D 트리: 포스터 x26~74%, y26~70%를 트리 모양(+별빛 타원)으로 오려낸 판 */
+.treecut{overflow:hidden;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 44' preserveAspectRatio='none'%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='.45'/%3E%3C/filter%3E%3Cfilter id='c'%3E%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='24,1 28.5,7 33.5,14.5 38,23 43,30.5 46,36 45,40 42,43 6,43 3,40 2,36 5,30.5 10,23 14.5,14.5 19.5,7'/%3E%3Cellipse filter='url(%23c)' fill='%23fff' cx='24' cy='6' rx='7.6' ry='5.2'/%3E%3C/svg%3E") 0 0/100% 100%;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 44' preserveAspectRatio='none'%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='.45'/%3E%3C/filter%3E%3Cfilter id='c'%3E%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='24,1 28.5,7 33.5,14.5 38,23 43,30.5 46,36 45,40 42,43 6,43 3,40 2,36 5,30.5 10,23 14.5,14.5 19.5,7'/%3E%3Cellipse filter='url(%23c)' fill='%23fff' cx='24' cy='6' rx='7.6' ry='5.2'/%3E%3C/svg%3E") 0 0/100% 100%}
+.treecut img{position:absolute;left:-54.17%;top:0;width:208.33%;transform:translateY(-26%)}
+/* 지평선 쪽 옅은 안개: 먼 것일수록 흐려져 깊이감이 생긴다 */
+.haze{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(transparent 26%,rgba(242,232,220,.5) 41%,rgba(242,232,220,.15) 52%,transparent 60%)}
+.vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(49,18,24,.35))}
+.card{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));width:min(340px,calc(100vw - 32px));
+  transform:translate(-50%,30px);opacity:0;transition:opacity 1s,transform 1s cubic-bezier(.16,1,.3,1);
+  background:rgba(49,18,24,.9);border-radius:16px;padding:18px 16px 16px;text-align:center;box-sizing:border-box;
+  box-shadow:0 10px 30px rgba(0,0,0,.3);pointer-events:none}
+.card.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.card small{display:block;font:12px 'Courier New',monospace;letter-spacing:.2em;opacity:.8}
+.card h1{font:500 26px/1.2 'Playfair Display',serif;letter-spacing:.06em;margin:6px 0 8px;color:#f3d9a8}
+.card p{margin:4px 0;font-size:14px;line-height:1.7}
+.card .en{font:13px/1.7 'Courier New',monospace;letter-spacing:.05em}
+.card .place{margin-top:8px;font-weight:700}
+.card .place span{font-weight:400;font-size:12.5px;opacity:.8}
+.enter{display:block;margin:14px 0 0;padding:13px;border-radius:999px;background:#d9b25a;color:var(--wine);
+  font:700 17px 'Gowun Batang',serif;text-decoration:none;animation:pulse 2s ease-in-out infinite}
+.again{margin-top:10px;background:none;border:0;color:var(--cream);opacity:.75;font:13px 'Gowun Batang',serif;cursor:pointer}
+
+.bob{transform-box:fill-box;transform-origin:50% 100%;animation:sway 1.4s ease-in-out infinite alternate}
+.walk{animation:stroll 16s ease-in-out infinite alternate}
+.tw{animation:tw 1.8s ease-in-out infinite alternate}
+.note{transform-box:fill-box;animation:note 3.2s linear infinite}
+
+@keyframes in{from{opacity:0}}
+@keyframes out{to{opacity:0}}
+@keyframes bob{0%,100%{transform:none}25%{transform:translateY(-7px) rotate(.7deg)}75%{transform:translateY(5px) rotate(-.7deg)}}
+@keyframes settle{from{transform:translateY(-25.4%)}to{transform:translateY(var(--lift))}}
+@keyframes flip{
+  from{z-index:4}
+  49%{z-index:4}
+  50%{z-index:0}
+  to{z-index:0;transform:rotateX(180deg);filter:brightness(.55)}}
+@keyframes rise{from{transform:translateY(46%)}}
+@keyframes align{to{transform:translate(var(--tx),var(--ty)) scale(var(--s))}}
+@keyframes pu{0%{opacity:0;transform:scaleY(.05)}25%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes fly{
+  from{opacity:0;transform:translate(-50%,-50%) scale(.1)}
+  20%{opacity:1}
+  70%{opacity:1}
+  to{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--r)) scale(1)}}
+/* 덮개 열릴 때 은은하게(≈3.2s) → 마켓으로 빨려 들어갈 때 환하게(≈8.4s) */
+@keyframes glow{0%{opacity:0}12%{opacity:.3}30%{opacity:.12}100%{opacity:0}}
+@keyframes sway{to{transform:translateY(-1.4px) rotate(1.5deg)}}
+@keyframes stroll{to{transform:translateX(var(--d))}}
+@keyframes tw{to{opacity:.3}}
+@keyframes note{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translate(8px,-46px);opacity:0}}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(217,178,90,.25)}}
+@media (prefers-reduced-motion:reduce){*{animation-delay:0s!important;animation-duration:.01s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<canvas id="snow"></canvas>
+
+<div id="intro"><div class="float"><div class="box">
+  <img class="p-top" src="포스터-웹.jpg" alt="">
+  <div class="pocket"><img class="p-letter" src="포스터-웹.jpg" alt="Christmas Market 초대장 포스터"></div>
+  <img class="p-env" src="포스터-웹.jpg" alt="">
+  <svg class="p-flap" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="fl" x2="0" y2="1"><stop offset=".5" stop-color="#46171e"/><stop offset=".82" stop-color="#36111a"/></linearGradient></defs>
+    <polygon fill="url(#fl)" stroke="#f3c9b0" stroke-opacity=".18" stroke-width="1" vector-effect="non-scaling-stroke"
+      points="0,50.86 100,51.28 94.3,52.81 88.6,56.68 80.05,62.71 71.49,68.65 62.94,74.72 50,82.7 37.06,74.44 31.36,70.47 22.81,64.56 14.25,58.55 5.7,52.87"/>
+  </svg>
+  <img class="p-seal" src="포스터-웹.jpg" alt="">
+  <i class="p-hide"></i></div></div></div>
+<div id="burst"></div>
+
+<div id="walk" role="img" aria-label="크리스마스 마켓 입구를 지나 마을 안으로 걸어 들어가는 장면">
+  <div id="stage"><div class="sky"><img src="포스터-마켓.jpg" alt=""></div><div id="world"></div><div class="haze"></div></div>
+  <div class="vig"></div>
+  <div class="card">
+    <small>CELEBRATE IN CHRIST</small>
+    <h1>CHRISTMAS MARKET</h1>
+    <p>[모든 수익금은 난민 선교를 위해 사용됩니다]</p>
+    <p class="en">SUWON HANA CHURCH<br>2026.12.25 11:00-16:00</p>
+    <p class="place">수원하나교회 교육관 주차장<br><span>경기도 용인시 기흥구 서그내로 53번길 30</span></p>
+    <a class="enter" id="enterBtn" href="#">마켓 입장하기 →</a>
+    <button class="again" onclick="location.reload()">처음부터 다시 보기 ↺</button>
+  </div>
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <radialGradient id="glow"><stop offset="0" stop-color="#ffd877" stop-opacity=".85"/><stop offset="1" stop-color="#ffd877" stop-opacity="0"/></radialGradient>
+</defs></svg>
+<div id="glow"></div>
+
+<script>
+// 포스터의 과슈 그림체에 맞춰 외곽선은 거의 안 보이게
+const INK='#3a2a22', S=`stroke="${INK}" stroke-opacity=".3" stroke-width=".6" stroke-linejoin="round"`;
+let seed=11; const R=()=>(seed=seed*16807%2147483647)/2147483647;
+const pick=a=>a[Math.floor(R()*a.length)];
+const svg=(w,s)=>`<svg viewBox="0 0 ${w} 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+const tw=()=>R()<.33?`class="tw" style="animation-delay:-${(R()*2).toFixed(2)}s"`:'';   // 3개 중 1개만 반짝여 그리기 부담을 줄임
+
+/* ---------- 사람 (발끝이 0,0) ---------- */
+function person(o){
+  const k=o.kind||'p'; let s='';
+  if(k==='angel') s+=`<path d="M-3 -30C-20 -42 -24 -20 -6 -18ZM3 -30C20 -42 24 -20 6 -18Z" fill="#fff" ${S}/>`;
+  if(k==='angel'||k==='king'){
+    s+=`<path d="M-11 0L-6 -33Q0 -36 6 -33L11 0Z" fill="${k==='angel'?'#fbf7ee':'#6e4a7e'}" ${S}/>`;
+    s+= k==='king'
+      ? `<path d="M-11 0L-10.4 -4H10.4L11 0Z" fill="#fff" ${S}/><path d="M-7 -33Q0 -29 7 -33" fill="none" stroke="#fff" stroke-width="3"/><path d="M11 -2V-30" stroke="${INK}" stroke-width="1.4"/><circle cx="11" cy="-31" r="2.2" fill="#d9b25a" ${S}/>`
+      : `<path d="M-6 -24h12" stroke="#d9b25a" stroke-width="2"/>`;
+  } else {
+    const leg=k==='nut'?'#f3ead6':'#3a2e24';
+    s+=`<path d="M-4 0V-13M4 0V-13" stroke="${INK}" stroke-width="4.2" stroke-linecap="round"/><path d="M-4 -1V-12M4 -1V-12" stroke="${leg}" stroke-width="2.4" stroke-linecap="round"/>`;
+    s+=`<path d="M-9 -11L-7 -32Q0 -36 7 -32L9 -11Q0 -9 -9 -11Z" fill="${o.coat}" ${S}/>`;
+    s+= k==='nut'
+      ? `<path d="M-8.4 -16h16.8" stroke="#d9b25a" stroke-width="2"/><circle cy="-28" r="1" fill="#d9b25a"/><circle cy="-22" r="1" fill="#d9b25a"/><circle cx="-7" cy="-32" r="2.2" fill="#d9b25a" ${S}/><circle cx="7" cy="-32" r="2.2" fill="#d9b25a" ${S}/>`
+      : `<path d="M0 -33V-11" stroke="${INK}" stroke-width=".6"/>`;
+    if(o.apron) s+=`<path d="M-6 -29h12v17h-12z" fill="#f6efdf" ${S}/>`;
+    if(o.scarf) s+=`<path d="M-6 -35h12v3.5h-12zM2.5 -32v8h3v-8z" fill="${o.scarf}" ${S}/>`;
+    if(o.book) s+=`<path d="M-7 -24l7 2 7-2v-8l-7 2-7-2z" fill="#f6efdf" ${S}/>`;
+  }
+  s+=`<circle cy="-40" r="6" fill="${o.skin||'#f3d6bb'}" ${S}/><circle cx="-2.2" cy="-40" r=".75" fill="${INK}"/><circle cx="2.2" cy="-40" r=".75" fill="${INK}"/>`;
+  const hair=`<path d="M-6 -40a6 6 0 0 1 12 0q-6 -3 -12 0z" fill="${o.hair||'#5a3d28'}" ${S}/>`;
+  if(k==='nut') s+=`<path d="M-3 -36.5q3 -2 6 0" stroke="#fff" stroke-width="1.6" fill="none"/><rect x="-5.5" y="-60" width="11" height="16" fill="#2e2620" ${S}/><rect x="-5.5" y="-48" width="11" height="2.4" fill="#d9b25a"/><path d="M0 -60q4 -5 1 -9" stroke="#b0372f" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+  else if(k==='angel') s+=`<path d="M-6.6 -39a6.6 6.6 0 0 1 13.2 0v8h-2.4v-6q-4.2-2.4-8.4 0v6h-2.4z" fill="#d9b25a" ${S}/><ellipse ${tw()} cy="-51" rx="6" ry="1.8" fill="none" stroke="#e8c15f" stroke-width="1.6"/>`;
+  else if(k==='king') s+=`<path d="M-5 -36q5 8 10 0" fill="#e8e2d6" ${S}/><polygon points="-6,-44 -6,-52 -3,-48 0,-54 3,-48 6,-52 6,-44" fill="#d9b25a" ${S}/>`;
+  else if(o.hat==='beanie') s+=`<path d="M-6.2 -41a6.2 6.2 0 0 1 12.4 0z" fill="${o.hc}" ${S}/><circle cy="-48" r="2" fill="#fff" ${S}/>`;
+  else if(o.hat==='top') s+=`<rect x="-4.5" y="-55" width="9" height="11" fill="#2e2620" ${S}/><rect x="-8" y="-45" width="16" height="2" fill="#2e2620" ${S}/>`;
+  else if(o.hat==='santa') s+=`<path d="M-6.5 -43Q0 -55 9 -50L6.5 -43z" fill="#b0372f" ${S}/><circle cx="9" cy="-50" r="2" fill="#fff" ${S}/><rect x="-7" y="-45" width="14" height="3" rx="1.5" fill="#fff" ${S}/>`;
+  else if(o.hat==='muff') s+=hair+`<path d="M-6.4 -41a6.4 7 0 0 1 12.8 0" stroke="${INK}" fill="none"/><circle cx="-6.4" cy="-40" r="2.6" fill="${o.hc}" ${S}/><circle cx="6.4" cy="-40" r="2.6" fill="${o.hc}" ${S}/>`;
+  else s+=hair;
+  return s;
+}
+const COATS=['#7b2a2a','#2f4a3a','#27384a','#b08a3e','#8b3a3a','#4a5a4a','#6b4a3a','#c9b48a','#3a2e33'];
+const rp=()=>({coat:pick(COATS),skin:pick(['#f3d6bb','#e6bb98','#c9956c']),
+  hat:pick(['beanie','beanie','top','hair','muff','hair']),hc:pick(['#b0372f','#f3ead6','#5f6b45','#3f5a74']),
+  hair:pick(['#5a3d28','#2e2620','#a0703f','#d9b25a']),scarf:R()<.7?pick(['#b0372f','#f3ead6','#d9b25a','#5f6b45']):null});
+function place(o,x,y,s,walk){
+  const g=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(2)})">${person(o)}</g>`;
+  return walk?`<g class="walk" style="--d:${walk.toFixed(0)}px;animation-duration:${(12+R()*10).toFixed(1)}s;animation-delay:-${(R()*10).toFixed(1)}s">${g}</g>`:g;
+}
+function crowd(x0,x1,step,yBase,sBase,gaps=[]){
+  const a=[];
+  for(let x=x0;x<x1;x+=step+R()*step*.4){
+    if(gaps.some(([g0,g1])=>x>g0&&x<g1)) continue;
+    const kid=R()<.18, s=(sBase+R()*.08)*(kid?.7:1);
+    a.push([rp(),x,yBase+R()*6,s,R()<.3?(R()<.5?-1:1)*(15+R()*35):0]);
+  }
+  return a.sort((p,q)=>p[2]-q[2]).map(p=>place(...p)).join('');
+}
+
+/* ---------- 거리 소품 ---------- */
+const pine=(x,b,s)=>`<g transform="translate(${x} ${b}) scale(${s})"><rect x="-3" y="-8" width="6" height="8" fill="#6b4a3a" ${S}/><path d="M-20 -8L0 -40L20 -8ZM-16 -26L0 -56L16 -26ZM-11 -44L0 -70L11 -44Z" fill="#2f4a3a" ${S}/><path d="M-19 -9l5-3 5 3 5-3 4 3 5-3 5 3M-15 -27l5-3 5 3 5-3 5 3 5-3 2 3M-10 -45l5-3 5 3 5-3 4 3" fill="none" stroke="#fffdf6" stroke-width="2.4" stroke-linecap="round"/></g>`;
+const lamp=(x,b,h)=>`<path d="M${x} ${b}V${b-h}" stroke="#2e2620" stroke-width="3"/><path d="M${x-5} ${b+1}h10" stroke="#2e2620" stroke-width="4"/><circle ${tw()} cx="${x}" cy="${b-h-6}" r="20" fill="url(#glow)"/><path d="M${x-5} ${b-h}h10l-2-12h-6z" fill="#f6c768" ${S}/><path d="M${x-6} ${b-h-12}h12l-6-5z" fill="#2e2620" ${S}/>`;
+function garland(x0,x2,y,sag){
+  let s=`<path d="M${x0} ${y}Q${(x0+x2)/2} ${y+sag*2} ${x2} ${y}" fill="none" stroke="${INK}" stroke-opacity=".5"/>`;
+  const n=Math.round((x2-x0)/18);
+  for(let i=1;i<n;i++){const t=i/n, xx=(1-t)**2*x0+2*(1-t)*t*(x0+x2)/2+t*t*x2, yy=(1-t)**2*y+2*(1-t)*t*(y+sag*2)+t*t*y;
+    s+=`<circle ${tw()} cx="${xx.toFixed(1)}" cy="${(yy+2).toFixed(1)}" r="2.4" fill="${i%2?'#f6c768':'#d0533f'}"/>`;}
+  return s;
+}
+function stall(x,stripe,vendor){
+  const w=100,b=258; let s=`<rect x="${x}" y="182" width="${w}" height="${b-182}" fill="#6b4a3a" ${S}/><path d="M${x+6} 205h${w-12}" stroke="${INK}" stroke-width="1.2"/>`;
+  for(let i=0;i<8;i++) s+=`<rect x="${x+9+i*11}" y="197" width="6" height="8" rx="1" fill="${pick(['#b0372f','#d9b25a','#f3ead6','#2f4a3a'])}" ${S}/>`;
+  s+=`<g transform="translate(${x+w/2} 250) scale(.95)">${person(vendor)}</g>`;
+  s+=`<rect x="${x-3}" y="226" width="${w+6}" height="${b-226}" fill="#a87a4f" ${S}/><path d="M${x-3} 238h${w+6}M${x-3} 248h${w+6}" stroke="${INK}" stroke-width=".7"/>`;
+  for(let i=0;i<6;i++){const gx=x+10+i*16; s+= i%2?`<circle cx="${gx}" cy="222" r="4" fill="#c98b4e" ${S}/>`:`<path d="M${gx-3} 226v-7h6v7z" fill="#b0372f" ${S}/>`;}
+  s+=`<rect x="${x-3}" y="170" width="5" height="${b-170}" fill="#8a6342" ${S}/><rect x="${x+w-2}" y="170" width="5" height="${b-170}" fill="#8a6342" ${S}/>`;
+  for(let i=0;i<10;i++){const sx=x-6+i*11.2; s+=`<path d="M${sx} 168h11.2v16a5.6 5.6 0 0 1 -11.2 0z" fill="${i%2?'#f6efdf':stripe}" ${S}/>`;}
+  for(let i=0;i<9;i++) s+=`<circle ${tw()} cx="${x+6+i*11}" cy="194" r="1.7" fill="#f6c768"/>`;
+  s+=`<polygon points="${x-10},168 ${x+w/2},140 ${x+w+10},168" fill="#9c2b24" ${S}/>`;
+  s+=`<polygon points="${x+w/2},138 ${x-12},169 ${x+15},163 ${x+40},167 ${x+65},162 ${x+w+12},169" fill="#fffdf6" ${S}/>`;  return s;
+}
+const snowman=x=>`<g transform="translate(${x} 262)"><circle cy="-12" r="13" fill="#fffdf6" ${S}/><circle cy="-32" r="9" fill="#fffdf6" ${S}/><path d="M-6 -40h12v-3h-3v-9h-6v9h-3z" fill="#2e2620"/><path d="M-9 -26h18v3h-18z" fill="#9c2b24"/><path d="M0 -32l7 2-7 1z" fill="#d9813a"/><circle cx="-3" cy="-34" r="1" fill="${INK}"/><circle cx="3" cy="-34" r="1" fill="${INK}"/></g>`;
+
+/* ---------- 편지에서 흩날리는 별·장식 ---------- */
+const star=Array.from({length:10},(_,i)=>{const r=i%2?4.5:11,a=Math.PI*i/5-Math.PI/2;return `${(12+r*Math.cos(a)).toFixed(1)},${(12+r*Math.sin(a)).toFixed(1)}`}).join(' ');
+const SHAPES=[
+  `<path d="M12 0C13 9 15 11 24 12C15 13 13 15 12 24C11 15 9 13 0 12C9 11 11 9 12 0Z" fill="#e8c15f" ${S}/>`,
+  `<polygon points="${star}" fill="#e8c15f" ${S}/>`,
+  `<circle cx="12" cy="14" r="8" fill="#b0372f" ${S}/><rect x="9.5" y="3" width="5" height="4" fill="#d9b25a" ${S}/>`,
+  `<circle cx="12" cy="14" r="8" fill="#2f4a3a" ${S}/><rect x="9.5" y="3" width="5" height="4" fill="#d9b25a" ${S}/>`];
+document.getElementById('burst').innerHTML=Array.from({length:26},()=>{
+  const x=(R()*2-1)*48, y=-(R()*44+4), sz=10+R()*14;
+  return `<i style="--x:${x.toFixed(1)}vw;--y:${y.toFixed(1)}svh;--r:${(R()*360-180).toFixed(0)}deg;--t:${(4.8+R()*.9).toFixed(2)}s;width:${sz.toFixed(0)}px"><svg viewBox="0 0 24 24" ${tw()}>${pick(SHAPES)}</svg></i>`;
+}).join('');
+
+/* ================= 3D 마켓 거리 =================
+   좌표: x 좌우(0=길 한가운데), z 깊이(음수일수록 멀리), 모든 그림은 바닥에 선 판(billboard) */
+// ↓↓↓ 메타버스 마켓 주소를 여기에 넣으세요 ↓↓↓
+const METAVERSE_URL='https://hana-christmas-metaverse.vercel.app/';
+
+const world=document.getElementById('world'), ITEMS=[];
+const vb=(box,inner)=>`<svg viewBox="${box}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+const POP=8.5;                                   // 마켓이 펼쳐지기 시작하는 시각(초)
+function put(html,x,z,w,h,{y=0,ry=0,cls='',pd}={}){
+  const d=document.createElement('div'); d.className=cls;
+  // 가운데(트리)부터 바깥쪽으로 차례로 일어선다
+  if(pd===undefined) pd=POP+.35+Math.min(1,Math.abs(x)/600+R()*.4);
+  d.innerHTML=cls==='ground'?html:`<div class="pu" style="--pd:${pd.toFixed(2)}s">${html}</div>`;
+  Object.assign(d.style,{width:w+'px',height:h+'px',transform:`translate3d(${x-w/2}px,${-h-y}px,${z}px) rotateY(${ry}deg)`});
+  world.appendChild(d); ITEMS.push([d,z]);
+}
+const bob=()=>'';
+const human=(o,x,z,k,walk)=>put(vb('-16 -64 32 66',
+  walk?`<g class="walk" style="--d:${walk.toFixed(0)}px;animation-duration:${(10+R()*8).toFixed(1)}s;animation-delay:-${(R()*10).toFixed(1)}s"><g ${bob()}>${person(o)}</g></g>`:`<g ${bob()}>${person(o)}</g>`),
+  x,z,32*k,66*k);
+
+// 바닥(눈 덮인 광장, 가운데 길)과 저 멀리 포스터 속 마을·트리
+put('',0,0,320,440,{cls:'ground'}); ITEMS.at(-1)[0].style.transform='translate3d(-160px,0,-3600px) rotateX(90deg) scale(10)';
+
+// 앞쪽 3D 트리: 넘어오는 순간 포스터 속 트리와 정확히 겹치고, 걸어갈수록 커진다 (배경 그림에선 트리를 지웠다)
+put('<img src="포스터-트리.jpg" alt="">',0,-1900,650,843,{cls:'treecut',pd:-9});
+const tree=ITEMS.at(-1)[0];
+
+// 길 양옆 노점 (길 쪽으로 비스듬히), 사이사이 가로등, 길을 가로지르는 전구 줄
+for(let i=0;i<6;i++) for(const side of [-1,1]){
+  const z=-350-i*330-(side>0?120:0), hat=pick(['santa','beanie','muff','top']);
+  put(vb('-14 134 128 130',stall(0,(i+(side>0))%2?'#2f4a3a':'#9c2b24',{...rp(),hat,apron:true})),side*265,z,236,240,{ry:-side*55});
+  put(vb('-22 -136 44 138',lamp(0,0,108)),side*205,z+170,88,276);
+  if(side>0) put(vb('0 0 410 80',garland(0,410,6,34)),0,z+170,410,80,{y:180});
+}
+// 노점 뒤 전나무
+for(let i=0;i<14;i++) for(const side of [-1,1]) put(vb('-22 -72 44 74',pine(0,0,1)),side*(420+R()*140),-200-i*170-R()*80,132*(.9+R()*.4),222*(.9+R()*.4));
+// 눈사람
+put(vb('-16 -56 32 58',snowman(0).replace('translate(0 262)','')),-150,-1250,70,127);
+put(vb('-16 -56 32 58',snowman(0).replace('translate(0 262)','')),165,-1750,70,127);
+
+// 구경꾼들
+for(let i=0;i<46;i++){
+  const z=-250-R()*2100, x=(R()*2-1)*175, kid=R()<.18;
+  human(rp(),x,z,kid?1.15:1.6,R()<.35?(R()<.5?-1:1)*(10+R()*25):0);
+}
+// 길 한가운데 성탄 연극 배우 행진
+human({kind:'nut',coat:'#b0372f'},-70,-900,1.8,24);
+human({kind:'angel',skin:'#f3d6bb'},0,-920,1.8,24);
+human({kind:'king',skin:'#e6bb98'},70,-900,1.8,24);
+// 캐롤 성가대
+let choir='';
+for(let i=0;i<6;i++) choir+=place({coat:'#9c2b24',scarf:'#fbf7ee',book:true,hat:'hair',skin:pick(['#f3d6bb','#e6bb98']),hair:pick(['#5a3d28','#2e2620','#a0703f'])},i*30,82+(i%2)*6,1.1);
+for(let i=0;i<5;i++) choir+=`<text class="note" style="animation-delay:-${(i*.65).toFixed(2)}s" x="${8+i*34}" y="12" font-size="16" fill="#9c2b24">${i%2?'♪':'♫'}</text>`;
+put(vb('-20 0 200 95',choir),125,-620,300,142);
+
+/* ---------- 카메라 ---------- */
+const sky=document.querySelector('.sky'), stage=document.getElementById('stage'), card=document.querySelector('.card'), enterBtn=document.getElementById('enterBtn');
+function layout(){
+  const k=innerHeight/812, w=innerWidth/k;
+  Object.assign(stage.style,{width:w+'px',marginLeft:-w/2+'px',transform:`scale(${k})`});
+}
+// 포스터(1막)를 마켓 배경 그림(.sky: 포스터 x7~93%, y23~66%)과 픽셀까지 겹치게 하는 이동·확대값,
+// 그리고 앞쪽 3D 트리가 시작 카메라 위치에서 포스터 트리와 정확히 겹치도록 크기·높이를 정한다
+function align(){
+  const k=innerHeight/812, w=innerWidth/k;
+  const skyW=Math.min(w,600), skyH=skyW/(3017/2133), P=skyW*1.1628;          // 무대 단위: 배경 폭, 높이, 포스터 전체 폭
+  const skyTop=410-skyH;
+  // 1막 → 배경
+  const Wsky=P*k, skyL=innerWidth/2-skyW*k/2, skyTopS=innerHeight/2-406*k+skyTop*k;
+  const W=Math.min(innerWidth,.707*innerHeight), H=W*1.4142, s=Wsky/W;
+  const r=document.documentElement.style;
+  r.setProperty('--s',s.toFixed(4));
+  r.setProperty('--tx',(skyL-.07*Wsky-s*(innerWidth-W)/2).toFixed(1)+'px');
+  r.setProperty('--ty',(skyTopS-.23*Wsky*1.4142-s*(innerHeight/2-H/2)).toFixed(1)+'px');
+  // 앞쪽 트리 (z=-1900, 시작 카메라 z=-350 → 원근 배율 700/2950)
+  const s0=700/2950, tw=.48*P/s0, th=.44*P*1.4142/s0, bottom=skyTop+(.70-.23)*P*1.4142, up=195-(bottom-365)/s0;
+  Object.assign(tree.style,{width:tw+'px',height:th+'px',transform:`translate3d(${-tw/2}px,${-th-up}px,-1900px)`});
+}
+layout(); align(); addEventListener('resize',()=>{layout();align();});
+
+const T0=10.2, DOLLY=7, Z0=-350, Z1=950;      // 마을 입구에서 출발 → 노점 거리를 지나 트리 쪽으로
+const easeIO=t=>t<.5?4*t*t*t:1-(-2*t+2)**3/2;
+let look=[0,0], lookNow=[0,0], cardShown=false;
+const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+addEventListener('pointermove',e=>{look=[(e.clientX/innerWidth-.5)*10,(e.clientY/innerHeight-.5)*-4]});
+let lastOp=[];
+function camera(sec){
+  if(sec<7.8&&!reduced) return;                // 1막(봉투·포스터) 동안엔 숨은 마켓을 건드리지 않는다
+  const t=reduced?1:Math.min(1,Math.max(0,(sec-T0)/DOLLY)), camZ=Z0+(Z1-Z0)*easeIO(t);
+  lookNow=lookNow.map((v,i)=>v+(look[i]-v)*.05);
+  const ry=lookNow[0]+Math.sin(sec*.35)*2.5*t, rx=lookNow[1];
+  const rad=Math.PI/180;
+  sky.style.transform=`translate(${(-700*Math.sin(ry*rad)).toFixed(1)}px,${(700*Math.sin(rx*rad)).toFixed(1)}px) scale(${(1+.2*easeIO(t)).toFixed(4)})`;
+  world.style.transform=`rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(${camZ.toFixed(1)}px)`;
+  // 카메라 바로 앞/뒤에 온 판은 흐리게 사라지게 (지나치는 느낌 + 시점 뒤로 뒤집혀 보이는 것 방지)
+  ITEMS.forEach(([d,z],i)=>{ const e=z+camZ, o=e>420?Math.max(0,(600-e)/180).toFixed(2):''; if(lastOp[i]!==o){lastOp[i]=o;d.style.opacity=o;} });
+  if(!cardShown&&(reduced||t>.85)){cardShown=true;card.classList.add('show');}
+}
+enterBtn.href=METAVERSE_URL||'#';
+enterBtn.addEventListener('click',e=>{ if(!METAVERSE_URL){e.preventDefault();alert('메타버스 마켓 주소가 아직 연결되지 않았어요.');} });
+
+/* ---------- 눈 + 카메라 프레임 루프 ---------- */
+const c=document.getElementById('snow'), x=c.getContext('2d'), dpr=Math.min(1.5,devicePixelRatio||1);
+const rs=()=>{c.width=innerWidth*dpr;c.height=innerHeight*dpr}; rs(); addEventListener('resize',rs);
+const flakes=Array.from({length:90},()=>({x:Math.random(),y:Math.random(),r:Math.random()*2+.6,s:Math.random()*.0015+.0006,d:Math.random()*6}));
+(function loop(now){
+  camera(document.timeline.currentTime/1000);
+  x.clearRect(0,0,c.width,c.height); x.fillStyle='#fff'; x.strokeStyle='rgba(75,59,43,.25)'; x.lineWidth=dpr*.6;
+  for(const f of flakes){
+    f.y+=f.s; if(f.y>1.02){f.y=-.02;f.x=Math.random()}
+    x.beginPath(); x.arc((f.x+Math.sin(now/1500+f.d)*.01)*c.width,f.y*c.height,f.r*dpr,0,7); x.fill(); x.stroke();
+  }
+  requestAnimationFrame(loop);
+})(0);
+</script>
+</body>
+</html>
