@@ -99,6 +99,7 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 /* 숨어 있는 동안에도 제 크기로 미리 그려 두고(.001), 일어설 때는 그려 둔 그림을 늘이기만 한다 */
 .pu{width:100%;height:100%;transform-origin:50% 100%;opacity:.001;will-change:transform,opacity}
 .pu.up{opacity:1;animation:grow .85s cubic-bezier(.3,1.6,.5,1) backwards,in .3s ease backwards}
+.pu.go.up{animation:grow .85s cubic-bezier(.3,1.6,.5,1) backwards,in .3s ease backwards,go var(--wt) ease-in-out var(--wo) infinite alternate}
 .treecut .pu{animation:none}
 /* 걸어 들어가는 동안엔 그림 속 잔움직임(반짝임·산책·음표)을 멈춰 매 프레임 다시 그리지 않게 → 도착하면 깨어난다 */
 #world:not(.live) :is(.walk,.tw,.note){animation-play-state:paused}
@@ -125,7 +126,6 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
   box-shadow:0 10px 30px rgba(0,0,0,.3);pointer-events:none}
 .card.show{visibility:visible;opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .card.show>*{animation:up .7s cubic-bezier(.2,.7,.3,1) backwards}
-.card.show>.enter{animation:up .7s cubic-bezier(.2,.7,.3,1) backwards,pulse 2s ease-in-out infinite}
 .card small{display:block;font:12px 'Courier New',monospace;letter-spacing:.2em;opacity:.8}
 .card h1{font:500 26px/1.2 'Playfair Display',serif;letter-spacing:.06em;margin:6px 0 8px;color:#f3d9a8}
 .card p{margin:4px 0;font-size:14px;line-height:1.7}
@@ -135,12 +135,13 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 .card .map{font-size:12.5px;opacity:.9}
 .card .map a{color:#f3d9a8;text-underline-offset:3px;padding:6px 2px}
 .enter{display:block;margin:14px 0 0;padding:13px;border-radius:999px;background:#d9b25a;color:var(--wine);
-  font:700 17px 'Gowun Batang',serif;text-decoration:none;animation:pulse 2s ease-in-out infinite}
+  font:700 17px 'Gowun Batang',serif;text-decoration:none;position:relative}
+.enter::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 7px rgba(217,178,90,.25);opacity:0;animation:pulse 2s ease-in-out infinite}
 .again{margin-top:10px;background:none;border:0;color:var(--cream);opacity:.75;font:13px 'Gowun Batang',serif;cursor:pointer}
 
 .bob{transform-box:fill-box;transform-origin:50% 100%;animation:sway 1.4s ease-in-out infinite alternate}
 .walk{animation:stroll 16s ease-in-out infinite alternate}
-.tw{animation:tw 1.8s ease-in-out infinite alternate}
+.tw{animation:tw 1.8s steps(3) infinite alternate}
 .note{transform-box:fill-box;animation:note 3.2s linear infinite}
 
 @keyframes in{from{opacity:0}}
@@ -166,6 +167,7 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 /* 덮개 열릴 때 은은하게 */
 @keyframes glow{0%{opacity:0}12%{opacity:.3}30%{opacity:.12}100%{opacity:0}}
 @keyframes sway{to{transform:translateY(-1.4px) rotate(1.5deg)}}
+@keyframes go{to{translate:var(--d)}}
 @keyframes stroll{to{transform:translateX(var(--d))}}
 @keyframes tw{to{opacity:.3}}
 @keyframes note{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translate(8px,-46px);opacity:0}}
@@ -173,7 +175,7 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 @keyframes bloom{0%{opacity:0;transform:translate(-50%,-50%) scale(.03)}30%{opacity:1;transform:translate(-50%,-50%) scale(.22)}68%{opacity:1;transform:translate(-50%,-50%) scale(2.4)}100%{opacity:0;transform:translate(-50%,-50%) scale(3.2)}}
 @keyframes glintH{0%{opacity:0;transform:translate(-50%,-50%) scaleX(.05)}35%{opacity:1;transform:translate(-50%,-50%) scaleX(1)}100%{opacity:0;transform:translate(-50%,-50%) scaleX(1.8)}}
 @keyframes glintV{0%{opacity:0;transform:translate(-50%,-50%) scaleY(.05)}35%{opacity:1;transform:translate(-50%,-50%) scaleY(1)}100%{opacity:0;transform:translate(-50%,-50%) scaleY(1.8)}}
-@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(217,178,90,.25)}}
+@keyframes pulse{50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation-delay:0s!important;animation-duration:.01s!important;animation-iteration-count:1!important;transition-duration:.01s!important}}
 </style>
 </head>
@@ -222,7 +224,7 @@ const INK='#3a2a22', S=`stroke="${INK}" stroke-opacity=".3" stroke-width=".6" st
 let seed=11; const R=()=>(seed=seed*16807%2147483647)/2147483647;
 const pick=a=>a[Math.floor(R()*a.length)];
 const svg=(w,s)=>`<svg viewBox="0 0 ${w} 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
-const tw=()=>R()<.33?`class="tw" style="animation-delay:-${(R()*2).toFixed(2)}s"`:'';   // 3개 중 1개만 반짝여 그리기 부담을 줄임
+const tw=()=>R()<.33?`class="tw" style="animation-delay:-${R()<.5?0:1.8}s"`:'';   // 3개 중 1개만 반짝여 그리기 부담을 줄임
 
 /* ---------- 사람 (발끝이 0,0) ---------- */
 function person(o){
@@ -324,9 +326,10 @@ function put(html,x,z,w,h,{y=0,ry=0,cls='',up=false}={}){
   world.appendChild(d); ITEMS.push([d,z,R()*220]);   // 세 번째 값: 일어서는 시점을 조금씩 어긋나게
 }
 const bob=()=>'';
-const human=(o,x,z,k,walk)=>put(vb('-16 -64 32 66',
-  walk?`<g class="walk" style="--d:${walk.toFixed(0)}px;animation-duration:${(10+R()*8).toFixed(1)}s;animation-delay:-${(R()*10).toFixed(1)}s"><g ${bob()}>${person(o)}</g></g>`:`<g ${bob()}>${person(o)}</g>`),
-  x,z,32*k,66*k);
+const human=(o,x,z,k,walk)=>{
+  put(vb('-16 -64 32 66',`<g ${bob()}>${person(o)}</g>`),x,z,32*k,66*k);
+  if(walk){const p=ITEMS[ITEMS.length-1][0].firstChild; p.classList.add('go'); p.style.cssText=`--d:${(walk*k).toFixed(0)}px;--wt:${(10+R()*8).toFixed(1)}s;--wo:-${(R()*10).toFixed(1)}s`;}
+};
 
 // 바닥(눈 덮인 광장, 가운데 길)과 저 멀리 포스터 속 마을·트리
 put('',0,0,320,440,{cls:'ground'}); ITEMS[ITEMS.length-1][0].style.transform='translate3d(-160px,0,-3600px) rotateX(90deg) scale(10)';
