@@ -89,16 +89,19 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
    #world는 카메라: 원근 시점(눈 위치)을 축으로 앞으로 이동·회전한다 */
 #walk{position:fixed;inset:0;z-index:4;overflow:hidden;
   background:linear-gradient(var(--cream) 50%,#f7f1e7);
-  animation:in .4s ease 4.55s both}
+  animation:walkin .4s ease 4.55s both}   /* 0이 아니라 .001에서 시작: 1막 동안 미리 그려 둔다 */
 #stage{position:absolute;left:50%;top:50%;height:812px;margin-top:-406px;
   perspective:700px;perspective-origin:50% 45%}
 #world{position:absolute;left:50%;top:560px;width:0;height:0;
   transform-style:preserve-3d;transform-origin:0 -195px 700px}
 #world>div{position:absolute;left:0;top:0;transform-origin:50% 100%;backface-visibility:hidden;transform-style:preserve-3d}
 /* 눈밭에서 자라나듯 일어선다: 카메라가 가까이 다가가면 JS가 .up을 붙인다 */
-.pu{width:100%;height:100%;transform-origin:50% 100%;transform:scaleY(.05);opacity:0;
-  transition:transform .85s cubic-bezier(.3,1.6,.5,1),opacity .3s ease}
-.pu.up{transform:none;opacity:1}
+/* 숨어 있는 동안에도 제 크기로 미리 그려 두고(.001), 일어설 때는 그려 둔 그림을 늘이기만 한다 */
+.pu{width:100%;height:100%;transform-origin:50% 100%;opacity:.001;will-change:transform,opacity}
+.pu.up{opacity:1;animation:grow .85s cubic-bezier(.3,1.6,.5,1) backwards,in .3s ease backwards}
+.treecut .pu{animation:none}
+/* 걸어 들어가는 동안엔 그림 속 잔움직임(반짝임·산책·음표)을 멈춰 매 프레임 다시 그리지 않게 → 도착하면 깨어난다 */
+#world:not(.live) :is(.walk,.tw,.note){animation-play-state:paused}
 #world svg{display:block;width:100%;height:100%;overflow:visible}
 #world .ground{transform-origin:50% 0;backface-visibility:visible;animation:in .6s ease-out 4.65s both;
   background:linear-gradient(90deg,#fbf7ee 38%,#ebe0cf 45% 55%,#fbf7ee 62%)}
@@ -141,6 +144,8 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 .note{transform-box:fill-box;animation:note 3.2s linear infinite}
 
 @keyframes in{from{opacity:0}}
+@keyframes walkin{from{opacity:.001}}
+@keyframes grow{from{transform:scaleY(.05)}}
 @keyframes up{from{opacity:0;transform:translateY(10px)}}
 @keyframes out{to{opacity:0}}
 @keyframes arrive{from{transform:translateY(-18px)}}
@@ -164,7 +169,7 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 @keyframes stroll{to{transform:translateX(var(--d))}}
 @keyframes tw{to{opacity:.3}}
 @keyframes note{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translate(8px,-46px);opacity:0}}
-@keyframes starmove{to{top:var(--sy1,30%)}}
+@keyframes starmove{to{transform:translateY(calc(var(--sy1,0px) - var(--sy0,0px)))}}
 @keyframes bloom{0%{opacity:0;transform:translate(-50%,-50%) scale(.03)}30%{opacity:1;transform:translate(-50%,-50%) scale(.22)}68%{opacity:1;transform:translate(-50%,-50%) scale(2.4)}100%{opacity:0;transform:translate(-50%,-50%) scale(3.2)}}
 @keyframes glintH{0%{opacity:0;transform:translate(-50%,-50%) scaleX(.05)}35%{opacity:1;transform:translate(-50%,-50%) scaleX(1)}100%{opacity:0;transform:translate(-50%,-50%) scaleX(1.8)}}
 @keyframes glintV{0%{opacity:0;transform:translate(-50%,-50%) scaleY(.05)}35%{opacity:1;transform:translate(-50%,-50%) scaleY(1)}100%{opacity:0;transform:translate(-50%,-50%) scaleY(1.8)}}
@@ -382,11 +387,12 @@ function align(){
   r.setProperty('--ty',(skyTopS-.23*Wsky*1.4142-s*(innerHeight/2-H/2)).toFixed(1)+'px');
   // 앞쪽 트리 (z=-1900, 시작 카메라 z=-350 → 원근 배율 700/2950)
   const s0=700/2950, tw=.48*P/s0, th=.44*P*1.4142/s0, bottom=skyTop+(.70-.23)*P*1.4142, up=195-(bottom-365)/s0;
-  Object.assign(tree.style,{width:tw+'px',height:th+'px',transform:`translate3d(${-tw/2}px,${-th-up}px,-1900px)`});
+  Object.assign(tree.style,{width:tw/4+'px',height:th/4+'px',transformOrigin:'0 0',transform:`translate3d(${-tw/2}px,${-th-up}px,-1900px) scale(4)`});
 }
 layout(); align(); addEventListener('resize',()=>{layout();align();});
 
 const T0=4.75, DOLLY=4.2, Z0=-350, Z1=400;      // 끝 지점: 폰에서도 트리 별까지 다 보이는 거리      // 마을 입구에서 출발 → 노점 거리를 지나 트리 쪽으로
+world.style.transform=`translateZ(${Z0}px)`;   // 출발 위치에서 미리 그려 두기
 const easeIO=t=>1-(1-t)**4;   // 빛 속에서 빠르게 출발해 천천히 도착
 let look=[0,0], lookNow=[0,0], cardShown=false;
 const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -409,6 +415,7 @@ function camera(sec){
     // 별빛이 걷힌 뒤부터
     if(!d._up&&(sec>5.05||reduced)&&e>-reach-j){d._up=true;d.firstElementChild?.classList.add('up');}
   });
+  if(t>.8&&!world._live){world._live=1;world.classList.add('live');}   // 거의 도착하면 사람·전구가 움직이기 시작
   if(!cardShown&&(reduced||t>.55)){cardShown=true;card.classList.add('show');skip.hidden=true;}
 }
 // 건너뛰기: 끝이 있는 애니메이션을 모두 끝 장면으로 보내고, 카메라도 도착 지점으로
@@ -432,9 +439,9 @@ const rs=()=>{c.width=innerWidth*dpr;c.height=innerHeight*dpr}; rs(); addEventLi
 const flakes=Array.from({length:90},()=>({x:Math.random(),y:Math.random(),r:Math.random()*2+.6,s:Math.random()*.0015+.0006,d:Math.random()*6}));
 // 그림 세 장을 다 받아 디코딩까지 끝낸 뒤에 시작 (실패해도 멈춰 있지는 않게)
 let t0=null;
-Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))).then(()=>{
+Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))).then(()=>setTimeout(()=>{   // 숨은 마켓을 미리 그릴 틈
   document.documentElement.classList.remove('wait'); t0=performance.now();
-});
+},200));
 (function loop(now){
   camera(t0==null?-1:(now-t0)/1000);
   x.clearRect(0,0,c.width,c.height); x.fillStyle='#fff'; x.strokeStyle='rgba(75,59,43,.25)'; x.lineWidth=dpr*.6;
