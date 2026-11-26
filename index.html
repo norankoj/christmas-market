@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#480001">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Playfair+Display:wght@500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Playfair+Display:wght@500&family=Courier+Prime&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="preload" as="image" href="포스터-웹.webp">
 <link rel="preload" as="image" href="포스터-마켓.webp">
 <link rel="preload" as="image" href="포스터-트리.webp">
@@ -113,15 +113,17 @@ body{background:linear-gradient(#640700 calc(30*var(--vh)),var(--wine) calc(70*v
 /* 걸어 들어가는 동안엔 그림 속 잔움직임(반짝임·산책·음표)을 멈춰 매 프레임 다시 그리지 않게 → 도착하면 깨어난다 */
 #world:not(.live) :is(.walk,.tw,.note){animation-play-state:paused}
 #world svg{display:block;width:100%;height:100%;overflow:visible}
-#world .ground{transform-origin:50% 0;backface-visibility:visible;animation:in .6s ease-out 4.65s both;
-  background:linear-gradient(90deg,#fbf7ee 38%,#ebe0cf 45% 55%,#fbf7ee 62%)}
+#world .ground{transform-origin:50% 0;backface-visibility:visible;animation:in .6s ease-out 4.65s both}
+/* 바닥 무늬(눈밭+가운데 길)는 CSS 그라데이션 대신 128x2 캔버스를 늘려 쓴다: 텍스처 = 비트맵 크기라 카메라가 움직여도 다시 그리지 않음 (JS에서 한 번 칠함) */
+#world .ground canvas{display:block;width:100%;height:100%;will-change:transform}
 /* 배경 = 포스터의 마을 그림(포스터 x7~93%, y27~70%, MARKET 글씨와 트리는 지운 사본). 위·양옆은 종이색으로 번진다 */
-.sky{position:absolute;left:50%;width:min(140%,560px);margin-left:calc(min(140%,560px) / -2);bottom:402px;aspect-ratio:3017/2133;overflow:hidden;transform-origin:50% 100%;
+.sky{position:absolute;left:50%;width:min(140%,560px);margin-left:calc(min(140%,560px) / -2);bottom:402px;aspect-ratio:3017/2133;overflow:hidden;transform-origin:50% 100%;will-change:transform;
   -webkit-mask:linear-gradient(transparent,#000 8%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);-webkit-mask-composite:source-in;
   mask:linear-gradient(transparent,#000 8%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-composite:intersect}
 .sky img{position:absolute;inset:0;width:100%;height:100%}   /* 포스터-마켓.webp = 이 영역만 잘라낸 그림 */
 /* 앞쪽 3D 트리: 포스터 x28~72%, y30~66%를 트리 모양(+별빛 타원)으로 오려낸 판 */
-.treecut{overflow:hidden;
+/* .sky·.treecut의 will-change: 안드로이드 크롬은 화면상 크기가 바뀔 때마다 레이어를 다시 그려서 깜빡인다 → 처음 그린 것을 그대로 늘려 쓰게 */
+.treecut{overflow:hidden;will-change:transform;
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 36' preserveAspectRatio='none'%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='.45'/%3E%3C/filter%3E%3Cfilter id='c'%3E%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='22.2,3.5 25.5,8.5 29.5,12.5 33,16.5 36,20.5 39,24 39.5,27 37,30.5 34.5,32.5 33.5,35.6 10.9,35.6 9.9,32.5 7.4,30.5 4.9,27 5.4,24 8.4,20.5 11.4,16.5 14.9,12.5 18.9,8.5'/%3E%3Cellipse filter='url(%23c)' fill='%23fff' cx='22.29' cy='5' rx='7' ry='4.6'/%3E%3C/svg%3E") 0 0/100% 100%;
           mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 36' preserveAspectRatio='none'%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='.45'/%3E%3C/filter%3E%3Cfilter id='c'%3E%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='22.2,3.5 25.5,8.5 29.5,12.5 33,16.5 36,20.5 39,24 39.5,27 37,30.5 34.5,32.5 33.5,35.6 10.9,35.6 9.9,32.5 7.4,30.5 4.9,27 5.4,24 8.4,20.5 11.4,16.5 14.9,12.5 18.9,8.5'/%3E%3Cellipse filter='url(%23c)' fill='%23fff' cx='22.29' cy='5' rx='7' ry='4.6'/%3E%3C/svg%3E") 0 0/100% 100%}
 .treecut img{position:absolute;inset:0;width:100%;height:100%}   /* 포스터-트리.webp = 이 영역만 잘라낸 그림 */
@@ -135,10 +137,10 @@ body{background:linear-gradient(#640700 calc(30*var(--vh)),var(--wine) calc(70*v
   box-shadow:0 10px 30px rgba(0,0,0,.3);pointer-events:none}
 .card.show{visibility:visible;opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .card.show>*{animation:up .7s cubic-bezier(.2,.7,.3,1) backwards}
-.card small{display:block;font:12px 'Courier New',monospace;letter-spacing:.2em;opacity:.8}
+.card small{display:block;font:12px 'Courier Prime','Courier New',monospace;letter-spacing:.2em;opacity:.8}
 .card h1{font:500 26px/1.2 'Playfair Display',serif;letter-spacing:.06em;margin:6px 0 8px;color:#f3d9a8}
 .card p{margin:4px 0;font-size:14px;line-height:1.7}
-.card .en{font:13px/1.7 'Courier New',monospace;letter-spacing:.05em}
+.card .en{font:13px/1.7 'Courier Prime','Courier New',monospace;letter-spacing:.05em}
 .card .place{margin-top:8px;font-weight:700}
 .card .place span{font-weight:400;font-size:12.5px;opacity:.8}
 .card .map{font-size:12.5px;opacity:.9}
@@ -341,7 +343,12 @@ const human=(o,x,z,k,walk)=>{
 };
 
 // 바닥(눈 덮인 광장, 가운데 길)과 저 멀리 포스터 속 마을·트리
-put('',0,0,320,440,{cls:'ground'}); ITEMS[ITEMS.length-1][0].style.transform='translate3d(-160px,0,-3600px) rotateX(90deg) scale(10)';
+put('<canvas width="128" height="2"></canvas>',0,0,320,440,{cls:'ground'}); ITEMS[ITEMS.length-1][0].style.transform='translate3d(-160px,0,-3600px) rotateX(90deg) scale(10)';
+{ // 예전 CSS: linear-gradient(90deg,#fbf7ee 38%,#ebe0cf 45% 55%,#fbf7ee 62%)
+  const g=ITEMS[ITEMS.length-1][0].firstChild.getContext('2d'), gr=g.createLinearGradient(0,0,128,0);
+  for(const [o,col] of [[.38,'#fbf7ee'],[.45,'#ebe0cf'],[.55,'#ebe0cf'],[.62,'#fbf7ee']]) gr.addColorStop(o,col);
+  g.fillStyle=gr; g.fillRect(0,0,128,2);
+}
 
 // 앞쪽 3D 트리: 넘어오는 순간 포스터 속 트리와 정확히 겹치고, 걸어갈수록 커진다 (배경 그림에선 트리를 지웠다)
 put('<img src="포스터-트리.webp" alt="">',0,-1900,650,843,{cls:'treecut',up:true});
