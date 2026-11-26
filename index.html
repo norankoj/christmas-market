@@ -16,7 +16,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#311218">
+<meta name="theme-color" content="#480001">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Playfair+Display:wght@500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="preload" as="image" href="포스터-웹.webp">
@@ -24,19 +24,19 @@
 <link rel="preload" as="image" href="포스터-트리.webp">
 <style>
 /* --W/--H: 포스터(3508x4961) 표시 크기 (화면 안에 다 들어오게, 가운데 정렬) */
-:root{--cream:#f2e8dc;--ink:#3a2a22;--wine:#311218;
+:root{--cream:#f2e8dc;--ink:#3a2a22;--wine:#480001;
   --vh:1vh;--W:min(100vw,calc(70.7*var(--vh)));--H:calc(var(--W)*1.4142);
   --lift:0px}
 @supports (height:1svh){:root{--vh:1svh}}   /* 구형 웹뷰는 svh를 몰라서 vh로 대신한다 */
 html,body{margin:0;height:100%;overflow:hidden}
-body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*var(--vh))) var(--wine);color:var(--cream);font-family:'Gowun Batang',serif}
+body{background:linear-gradient(#640700 calc(30*var(--vh)),var(--wine) calc(70*var(--vh))) var(--wine);color:var(--cream);font-family:'Gowun Batang',serif}
 /* 그림을 다 받기 전에는 모든 애니메이션을 0초에 세워 둔다 (느린 와이파이에서도 끊김 없이 처음부터 재생) */
 .wait :not(#hint){animation-play-state:paused!important}
 #veil{position:fixed;inset:0;z-index:9;background:#fff6de;opacity:0;pointer-events:none;transition:opacity .3s ease}
 #hint{position:fixed;left:0;right:0;top:50%;margin:-.7em 0 0;text-align:center;font-size:14px;letter-spacing:.12em;z-index:8;pointer-events:none;opacity:0;transition:opacity .4s}
 .wait #hint{opacity:.75;animation:in .8s ease 1.2s backwards}   /* 1.2초 넘게 걸릴 때만 보인다 */
 #skip{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:8;border:0;padding:9px 6px;
-  background:none;color:var(--cream);opacity:.5;text-shadow:0 0 6px rgba(49,18,24,.9);   /* 배경 없이 흐린 글씨만 (밝은 장면 위에서도 읽히게 그림자) */
+  background:none;color:var(--cream);opacity:.5;text-shadow:0 0 6px rgba(72,0,1,.9);   /* 배경 없이 흐린 글씨만 (밝은 장면 위에서도 읽히게 그림자) */
   font:12px 'Gowun Batang',serif;letter-spacing:.08em;cursor:pointer;animation:in .6s ease 1s both}
 .wait #skip{display:none}
 #snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:7}
@@ -45,25 +45,35 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 #intro{position:fixed;inset:0;z-index:2;
   transform-origin:0 0;   /* --tx/--ty/--s: 포스터가 마켓 배경 그림과 정확히 겹치는 위치 (JS에서 계산) */
   animation:in .7s ease-out both,align 1.4s cubic-bezier(.6,0,.75,.6) 3.45s both,out .4s ease 4.75s both}   /* 잠깐 머물다 빨라져서, 걷기 시작 속도와 비슷하게 넘어간다 */
-.float{position:absolute;inset:0;transform-origin:50% 52%;   /* 봉인 근처를 축으로 */
+.float{position:absolute;inset:0;transform-origin:50% 52%;   /* 봉인 근처를 축으로 (닫힌 봉투에서 봉인 = 79.8%-27.95% ≈ 상자 51.9%) */
   animation:arrive .9s cubic-bezier(.2,.8,.3,1) both,wiggle .8s ease-in-out .9s}   /* 사뿐히 내려앉고 → 달그락 흔들린 뒤 열린다 */
 .box{position:absolute;left:50%;top:50%;width:var(--W);height:var(--H);
   margin:calc(var(--H)/-2) 0 0 calc(var(--W)/-2);perspective:1200px;
   animation:settle 1.15s cubic-bezier(.6,0,.2,1) 2.15s both}
-.box img,.box>svg{position:absolute;inset:0;width:100%;height:100%}
+.box>svg{position:absolute;inset:0;width:100%;height:100%}
+/* 조각마다 보이는 부분 크기만큼만 자른 틀(.pc)에 포스터 전체를 어긋나게 넣는다 → 안드로이드 GPU 타일 메모리 절약
+   --x/--y: 틀의 위치(포스터 기준), --w/--h: 틀 크기 */
+.pc{position:absolute;overflow:hidden;left:var(--x,0px);top:var(--y);width:var(--w,var(--W));height:var(--h)}
+.pc img{position:absolute;left:calc(-1*var(--x,0px));top:calc(-1*var(--y));width:var(--W);height:var(--H)}
 /* 봉투 안에 있는 동안 편지가 봉투 아래로 삐져나오지 않게 */
 .pocket{position:absolute;inset:0;z-index:1;clip-path:inset(-100% -50% 1% -50%)}   /* 아래 1%는 봉투가 확실히 덮게 */
 /* 포스터 한 장을 조각내서 쓴다. 좌표는 포스터에서 직접 잰 값(%) */
-.p-top{clip-path:inset(0 0 93.6% 0);animation:in .6s ease-out 2.85s both,out .6s ease 3.6s both}
-.p-letter{animation:rise 1.15s cubic-bezier(.6,0,.2,1) 2.15s both;
-  clip-path:polygon(0 6.4%,100% 6.4%,100% 51.28%,94.3% 52.51%,88.6% 56.38%,80.05% 62.41%,71.49% 68.35%,62.94% 74.42%,50% 82.4%,37.06% 74.14%,31.36% 70.17%,22.81% 64.26%,14.25% 58.25%,5.7% 52.57%,0 50.86%)}
-.p-env{z-index:3;animation:out .6s ease 3.6s both;
-  clip-path:polygon(0 50.86%,5.7% 52.57%,14.25% 58.25%,22.81% 64.26%,31.36% 70.17%,37.06% 74.14%,50% 82.4%,62.94% 74.42%,71.49% 68.35%,80.05% 62.41%,88.6% 56.38%,94.3% 52.51%,100% 51.28%,100% 100%,0 100%)}
-.p-seal{z-index:5;clip-path:circle(7.9% at 50% 77.2%);animation:out .6s ease 3.6s both}
-/* 닫힌 봉투에서는 포스터 아래 문구를 봉투색으로 가렸다가, 포스터가 다 나오면 보이게 */
-.p-hide{position:absolute;left:16%;right:16%;top:88.5%;height:9.5%;z-index:6;background:#321016;
-  box-shadow:0 0 14px 10px #321016;animation:out .6s ease 3.05s both}
-.p-flap{z-index:4;transform-origin:50% 51%;overflow:visible;
+/* 포스터 y 0~6.4% */
+.p-top{--y:0px;--h:calc(var(--H)*.064);animation:in .6s ease-out 2.85s both,out .6s ease 3.6s both}
+/* 포스터 y 6.4~78.15% (봉투 입구는 V가 아니라 봉인 밑이 평평한 모양, 다각형은 틀 기준으로 환산한 값) */
+.p-letter{--y:calc(var(--H)*.064);--h:calc(var(--H)*.7175);animation:rise 1.15s cubic-bezier(.6,0,.2,1) 2.15s both;
+  clip-path:polygon(0 0%,100% 0%,100% 69.408%,95.5% 70.383%,88% 76.237%,80% 83.624%,72% 90.871%,62.2% 100%,50% 100%,38.3% 100%,28% 90.453%,20% 83.345%,12% 76.237%,4.5% 70.383%,0 68.99%)}
+/* 포스터 y 55.9~100% */
+.p-env{--y:calc(var(--H)*.559);--h:calc(var(--H)*.441);z-index:3;animation:out .6s ease 3.6s both;
+  clip-path:polygon(0 0%,4.5% 2.268%,12% 11.791%,20% 23.356%,28% 34.921%,38.3% 50.454%,50% 50.454%,62.2% 50.454%,72% 35.601%,80% 23.81%,88% 11.791%,95.5% 2.268%,100% 0.68%,100% 100%,0 100%)}
+/* 봉인: 중심 (50%, 79.8%), 반지름 .107×W. 봉인 위쪽이 종이(눈밭)에 걸쳐 있어서, 원이 크면 닫힌 봉투에서 눈이 초승달처럼 보인다
+   → 밀랍 윗변에 딱 맞춘 원 (아래쪽 그림자가 조금 잘리는 건 빨강 위 빨강이라 안 보임). 그 둘레 정사각형만 */
+.p-seal{--r:calc(var(--W)*.107);--x:calc(var(--W)*.5 - var(--r));--y:calc(var(--H)*.798 - var(--r));--w:calc(var(--r)*2);--h:calc(var(--r)*2);
+  z-index:5;clip-path:circle(50%);animation:out .6s ease 3.6s both}
+/* 닫힌 봉투에서는 포스터 아래 문구(세 줄, x26.5~73.4%, y89.3~97.4%)를 봉투색으로 가렸다가, 포스터가 다 나오면 보이게 */
+.p-hide{position:absolute;left:24%;right:24%;top:88.6%;height:9.6%;z-index:6;background:#480001;
+  box-shadow:0 0 14px 10px #480001;animation:out .6s ease 3.05s both}
+.p-flap{z-index:4;transform-origin:50% 56%;overflow:visible;   /* 접는 선 = 봉투 윗변(포스터 y 약 56%) */
   animation:flip .85s cubic-bezier(.5,0,.3,1) 1.55s both,out .2s ease 3.3s both}   /* 편지에 완전히 가려진 뒤에 치운다 */
 
 #burst{position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden}
@@ -73,15 +83,14 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
    --sx/--sy0 → --sy1: 별의 화면 위치 (포스터가 당겨지는 동안 별을 따라감, JS에서 계산) */
 #star{position:fixed;left:var(--sx,50%);top:var(--sy0,30%);width:0;height:0;z-index:6;pointer-events:none;
   animation:starmove 1.4s cubic-bezier(.6,0,.75,.6) 3.45s both}
-#star i{position:absolute;left:0;top:0;opacity:0}
-#star .bloom{width:70vmax;height:70vmax;border-radius:50%;
-  background:radial-gradient(circle,#fffef8 0,rgba(255,246,222,.95) 5%,rgba(255,232,180,.6) 13%,rgba(255,220,150,.22) 28%,rgba(255,214,140,.06) 45%,transparent 60%);
+#star>*{position:absolute;left:0;top:0;opacity:0}
+/* bloom/glow는 작은 캔버스에 그라데이션을 한 번 그려 늘림 (거대한 합성 레이어 텍스처 방지) */
+#star .bloom{display:block;width:70vmax;height:70vmax;
   animation:bloom 1.7s cubic-bezier(.3,0,.25,1) 3.7s both}
 #star .gh,#star .gv{background:linear-gradient(90deg,transparent,rgba(255,250,232,.9) 50%,transparent);border-radius:2px}
 #star .gh{width:60vmax;height:2px;animation:glintH 1.5s ease-out 3.7s both}
 #star .gv{width:2px;height:60vmax;background:linear-gradient(transparent,rgba(255,250,232,.9) 50%,transparent);animation:glintV 1.5s ease-out 3.7s both}
-#glow{position:fixed;inset:0;z-index:6;pointer-events:none;
-  background:radial-gradient(circle at 50% 55%,rgba(255,242,210,1),rgba(255,226,160,.6) 35%,transparent 70%);
+#glow{position:fixed;inset:0;display:block;width:100%;height:100%;z-index:6;pointer-events:none;
   animation:glow 2.6s linear 1.55s both}
 
 /* ================= 2막: 마을 입구를 지나 3D 거리 안으로 걸어 들어감 =================
@@ -106,23 +115,23 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 #world svg{display:block;width:100%;height:100%;overflow:visible}
 #world .ground{transform-origin:50% 0;backface-visibility:visible;animation:in .6s ease-out 4.65s both;
   background:linear-gradient(90deg,#fbf7ee 38%,#ebe0cf 45% 55%,#fbf7ee 62%)}
-/* 배경 = 포스터의 마을 그림(포스터 x7~93%, y23~66%, MARKET 글씨와 트리는 지운 사본). 위·양옆은 종이색으로 번진다 */
+/* 배경 = 포스터의 마을 그림(포스터 x7~93%, y27~70%, MARKET 글씨와 트리는 지운 사본). 위·양옆은 종이색으로 번진다 */
 .sky{position:absolute;left:50%;width:min(140%,560px);margin-left:calc(min(140%,560px) / -2);bottom:402px;aspect-ratio:3017/2133;overflow:hidden;transform-origin:50% 100%;
   -webkit-mask:linear-gradient(transparent,#000 8%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);-webkit-mask-composite:source-in;
   mask:linear-gradient(transparent,#000 8%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-composite:intersect}
 .sky img{position:absolute;inset:0;width:100%;height:100%}   /* 포스터-마켓.webp = 이 영역만 잘라낸 그림 */
-/* 앞쪽 3D 트리: 포스터 x26~74%, y26~70%를 트리 모양(+별빛 타원)으로 오려낸 판 */
+/* 앞쪽 3D 트리: 포스터 x28~72%, y30~66%를 트리 모양(+별빛 타원)으로 오려낸 판 */
 .treecut{overflow:hidden;
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 44' preserveAspectRatio='none'%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='.45'/%3E%3C/filter%3E%3Cfilter id='c'%3E%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='24,1 28.5,7 33.5,14.5 38,23 43,30.5 46,36 45,40 42,43 6,43 3,40 2,36 5,30.5 10,23 14.5,14.5 19.5,7'/%3E%3Cellipse filter='url(%23c)' fill='%23fff' cx='24' cy='6' rx='7.6' ry='5.2'/%3E%3C/svg%3E") 0 0/100% 100%;
-          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 44' preserveAspectRatio='none'%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='.45'/%3E%3C/filter%3E%3Cfilter id='c'%3E%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='24,1 28.5,7 33.5,14.5 38,23 43,30.5 46,36 45,40 42,43 6,43 3,40 2,36 5,30.5 10,23 14.5,14.5 19.5,7'/%3E%3Cellipse filter='url(%23c)' fill='%23fff' cx='24' cy='6' rx='7.6' ry='5.2'/%3E%3C/svg%3E") 0 0/100% 100%}
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 36' preserveAspectRatio='none'%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='.45'/%3E%3C/filter%3E%3Cfilter id='c'%3E%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='22.2,3.5 25.5,8.5 29.5,12.5 33,16.5 36,20.5 39,24 39.5,27 37,30.5 34.5,32.5 33.5,35.6 10.9,35.6 9.9,32.5 7.4,30.5 4.9,27 5.4,24 8.4,20.5 11.4,16.5 14.9,12.5 18.9,8.5'/%3E%3Cellipse filter='url(%23c)' fill='%23fff' cx='22.29' cy='5' rx='7' ry='4.6'/%3E%3C/svg%3E") 0 0/100% 100%;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 36' preserveAspectRatio='none'%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='.45'/%3E%3C/filter%3E%3Cfilter id='c'%3E%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E%3Cpolygon filter='url(%23b)' fill='%23fff' points='22.2,3.5 25.5,8.5 29.5,12.5 33,16.5 36,20.5 39,24 39.5,27 37,30.5 34.5,32.5 33.5,35.6 10.9,35.6 9.9,32.5 7.4,30.5 4.9,27 5.4,24 8.4,20.5 11.4,16.5 14.9,12.5 18.9,8.5'/%3E%3Cellipse filter='url(%23c)' fill='%23fff' cx='22.29' cy='5' rx='7' ry='4.6'/%3E%3C/svg%3E") 0 0/100% 100%}
 .treecut img{position:absolute;inset:0;width:100%;height:100%}   /* 포스터-트리.webp = 이 영역만 잘라낸 그림 */
 /* 지평선 쪽 옅은 안개: 먼 것일수록 흐려져 깊이감이 생긴다 */
 .haze{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(transparent 26%,rgba(242,232,220,.5) 41%,rgba(242,232,220,.15) 52%,transparent 60%)}
-.vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(49,18,24,.35))}
+.vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(72,0,1,.35))}
 .card{position:fixed;z-index:5;visibility:hidden;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));width:min(340px,calc(100vw - 32px));
   transform:translate(-50%,30px);opacity:0;transition:opacity 1s,transform 1s cubic-bezier(.16,1,.3,1);
-  background:rgba(49,18,24,.9);border-radius:16px;padding:18px 16px 16px;text-align:center;box-sizing:border-box;
+  background:rgba(72,0,1,.9);border-radius:16px;padding:18px 16px 16px;text-align:center;box-sizing:border-box;
   box-shadow:0 10px 30px rgba(0,0,0,.3);pointer-events:none}
 .card.show{visibility:visible;opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .card.show>*{animation:up .7s cubic-bezier(.2,.7,.3,1) backwards}
@@ -151,13 +160,13 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 @keyframes out{to{opacity:0}}
 @keyframes arrive{from{transform:translateY(-18px)}}
 @keyframes wiggle{18%{transform:rotate(-1.8deg)}40%{transform:rotate(1.4deg)}62%{transform:rotate(-.9deg)}82%{transform:rotate(.4deg)}}
-@keyframes settle{from{transform:translateY(-25.4%)}to{transform:translateY(var(--lift))}}
+@keyframes settle{from{transform:translateY(-27.95%)}to{transform:translateY(var(--lift))}}
 @keyframes flip{
   from{z-index:4}
   49%{z-index:4}
   50%{z-index:0}
   to{z-index:0;transform:rotateX(180deg);filter:brightness(.55)}}
-@keyframes rise{from{transform:translateY(46%)}}
+@keyframes rise{from{transform:translateY(calc(var(--H)*.51))}}   /* 틀이 작아져도 이동 거리는 포스터 높이의 51% (편지 윗변 6.4+51=57.4% → 봉투 윗변 56.2%보다 아래라 닫혀 있을 때 안 보임) */
 @keyframes align{to{transform:translate(var(--tx),var(--ty)) scale(var(--s))}}
 @keyframes fly{
   from{opacity:0;transform:translate(-50%,-50%) scale(.1)}
@@ -186,15 +195,15 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 <p id="hint">초대장이 도착하고 있어요…</p>
 
 <div id="intro"><div class="float"><div class="box">
-  <img class="p-top" src="포스터-웹.webp" alt="">
-  <div class="pocket"><img class="p-letter" src="포스터-웹.webp" alt="Christmas Market 초대장 포스터"></div>
-  <img class="p-env" src="포스터-웹.webp" alt="">
+  <i class="pc p-top"><img src="포스터-웹.webp" alt=""></i>
+  <div class="pocket"><i class="pc p-letter"><img src="포스터-웹.webp" alt="Christmas Market 초대장 포스터"></i></div>
+  <i class="pc p-env"><img src="포스터-웹.webp" alt=""></i>
   <svg class="p-flap" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="fl" x2="0" y2="1"><stop offset=".5" stop-color="#46171e"/><stop offset=".82" stop-color="#36111a"/></linearGradient></defs>
+    <defs><linearGradient id="fl" x2="0" y2="1"><stop offset=".5" stop-color="#570402"/><stop offset=".82" stop-color="#480001"/></linearGradient></defs>
     <polygon fill="url(#fl)" stroke="#f3c9b0" stroke-opacity=".18" stroke-width="1" vector-effect="non-scaling-stroke"
-      points="0,50.86 100,51.28 94.3,52.81 88.6,56.68 80.05,62.71 71.49,68.65 62.94,74.72 50,82.7 37.06,74.44 31.36,70.47 22.81,64.56 14.25,58.55 5.7,52.87"/>
+      points="0,55.9 100,56.2 95.5,56.9 88,61.1 80,66.4 72,71.6 62.2,78.15 50,78.15 38.3,78.15 28,71.3 20,66.2 12,61.1 4.5,56.9"/>
   </svg>
-  <img class="p-seal" src="포스터-웹.webp" alt="">
+  <i class="pc p-seal"><img src="포스터-웹.webp" alt=""></i>
   <i class="p-hide"></i></div></div></div>
 <div id="burst"></div>
 
@@ -215,8 +224,8 @@ body{background:linear-gradient(#35231f calc(30*var(--vh)),var(--wine) calc(70*v
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <radialGradient id="glow"><stop offset="0" stop-color="#ffd877" stop-opacity=".85"/><stop offset="1" stop-color="#ffd877" stop-opacity="0"/></radialGradient>
 </defs></svg>
-<div id="star"><i class="bloom"></i><i class="gh"></i><i class="gv"></i></div>
-<div id="glow"></div>
+<div id="star"><canvas class="bloom" width="256" height="256"></canvas><i class="gh"></i><i class="gv"></i></div>
+<canvas id="glow"></canvas>
 
 <script>
 // 포스터의 과슈 그림체에 맞춰 외곽선은 거의 안 보이게
@@ -345,15 +354,16 @@ for(let i=0;i<6;i++) for(const side of [-1,1]){
   put(vb('-22 -136 44 138',lamp(0,0,108)),side*205,z+170,88,276);
   if(side>0) put(vb('0 0 410 80',garland(0,410,6,34)),0,z+170,410,80,{y:180});
 }
-// 노점 뒤 전나무
-for(let i=0;i<14;i++) for(const side of [-1,1]) put(vb('-22 -72 44 74',pine(0,0,1)),side*(420+R()*140),-200-i*170-R()*80,132*(.9+R()*.4),222*(.9+R()*.4));
+// ※ 전나무·구경꾼·음표 개수는 안드로이드 GPU 메모리(판 하나하나가 텍스처) 때문에 일부러 줄였다. 함부로 늘리지 말 것
+// 노점 뒤 전나무: 한쪽 7그루, 양쪽을 반 칸씩 엇갈려 빈 곳이 덜 보이게
+for(let i=0;i<7;i++) for(const side of [-1,1]) put(vb('-22 -72 44 74',pine(0,0,1)),side*(420+R()*140),-350-i*300-(side>0?150:0)-R()*60,132*(.9+R()*.4),222*(.9+R()*.4));
 // 눈사람
 put(vb('-16 -56 32 58',snowman(0).replace('translate(0 262)','')),-150,-1250,70,127);
 put(vb('-16 -56 32 58',snowman(0).replace('translate(0 262)','')),165,-1750,70,127);
 
-// 구경꾼들
-for(let i=0;i<46;i++){
-  const z=-250-R()*2100, x=(R()*2-1)*175, kid=R()<.18;
+// 구경꾼들:마지막 장면에서 오래 보이는 길 중간(-1300 근처)에 몰리게 (두 난수 합 = 삼각 분포, -300~-2300)
+for(let i=0;i<25;i++){
+  const z=-300-(R()+R())*1000, x=(R()*2-1)*175, kid=R()<.18;
   human(rp(),x,z,kid?1.15:1.6,R()<.35?(R()<.5?-1:1)*(10+R()*25):0);
 }
 // 길 한가운데 성탄 연극 배우 행진
@@ -363,7 +373,7 @@ human({kind:'king',skin:'#e6bb98'},70,-900,1.8,24);
 // 캐롤 성가대
 let choir='';
 for(let i=0;i<6;i++) choir+=place({coat:'#9c2b24',scarf:'#fbf7ee',book:true,hat:'hair',skin:pick(['#f3d6bb','#e6bb98']),hair:pick(['#5a3d28','#2e2620','#a0703f'])},i*30,82+(i%2)*6,1.1);
-for(let i=0;i<5;i++) choir+=`<text class="note" style="animation-delay:-${(i*.65).toFixed(2)}s" x="${8+i*34}" y="12" font-size="16" fill="#9c2b24">${i%2?'♪':'♫'}</text>`;
+for(let i=0;i<3;i++) choir+=`<text class="note" style="animation-delay:-${(i*1.07).toFixed(2)}s" x="${20+i*60}" y="12" font-size="16" fill="#9c2b24">${i%2?'♪':'♫'}</text>`;
 put(vb('-20 0 200 95',choir),125,-620,300,142);
 
 /* ---------- 카메라 ---------- */
@@ -372,7 +382,7 @@ function layout(){
   const k=innerHeight/812, w=innerWidth/k;
   Object.assign(stage.style,{width:w+'px',marginLeft:-w/2+'px',transform:`scale(${k})`});
 }
-// 포스터(1막)를 마켓 배경 그림(.sky: 포스터 x7~93%, y23~66%)과 픽셀까지 겹치게 하는 이동·확대값,
+// 포스터(1막)를 마켓 배경 그림(.sky: 포스터 x7~93%, y27~70%)과 픽셀까지 겹치게 하는 이동·확대값,
 // 그리고 앞쪽 3D 트리가 시작 카메라 위치에서 포스터 트리와 정확히 겹치도록 크기·높이를 정한다
 function align(){
   const k=innerHeight/812, w=innerWidth/k;
@@ -385,16 +395,16 @@ function align(){
   r.setProperty('--s',s.toFixed(4));
   r.setProperty('--tx',(skyL-.07*Wsky-s*(innerWidth-W)/2).toFixed(1)+'px');
   r.setProperty('--sx',innerWidth/2+'px');
-  r.setProperty('--sy0',(innerHeight/2-H/2+.322*H).toFixed(1)+'px');
-  r.setProperty('--sy1',(skyTopS+(.322-.23)*Wsky*1.4142).toFixed(1)+'px');
-  r.setProperty('--ty',(skyTopS-.23*Wsky*1.4142-s*(innerHeight/2-H/2)).toFixed(1)+'px');
-  // 앞쪽 트리 (z=-1900, 시작 카메라 z=-350 → 원근 배율 700/2950)
-  const s0=700/2950, tw=.48*P/s0, th=.44*P*1.4142/s0, bottom=skyTop+(.70-.23)*P*1.4142, up=195-(bottom-365)/s0;
+  r.setProperty('--sy0',(innerHeight/2-H/2+.350*H).toFixed(1)+'px');   // .350 = 트리 꼭대기 별의 포스터 y
+  r.setProperty('--sy1',(skyTopS+(.350-.27)*Wsky*1.4142).toFixed(1)+'px');
+  r.setProperty('--ty',(skyTopS-.27*Wsky*1.4142-s*(innerHeight/2-H/2)).toFixed(1)+'px');
+  // 앞쪽 트리 (z=-1900, 시작 카메라 z=-350 → 원근 배율 700/2950). 트리 그림 = 포스터 폭 44% × 높이 36%, 아래끝 y66%
+  const s0=700/2950, tw=.44*P/s0, th=.36*P*1.4142/s0, bottom=skyTop+(.66-.27)*P*1.4142, up=195-(bottom-365)/s0;
   Object.assign(tree.style,{width:tw/4+'px',height:th/4+'px',transformOrigin:'0 0',transform:`translate3d(${-tw/2}px,${-th-up}px,-1900px) scale(4)`});
 }
 layout(); align(); addEventListener('resize',()=>{layout();align();});
 
-const T0=4.75, DOLLY=4.2, Z0=-350, Z1=400;      // 끝 지점: 폰에서도 트리 별까지 다 보이는 거리      // 마을 입구에서 출발 → 노점 거리를 지나 트리 쪽으로
+const T0=4.75, DOLLY=4.2, Z0=-350, Z1=340;      // 끝 지점: 폰에서도 트리 별까지 다 보이는 거리      // 마을 입구에서 출발 → 노점 거리를 지나 트리 쪽으로
 world.style.transform=`translateZ(${Z0}px)`;   // 출발 위치에서 미리 그려 두기
 const easeIO=t=>1-(1-t)**4;   // 빛 속에서 빠르게 출발해 천천히 도착
 let look=[0,0], lookNow=[0,0], cardShown=false;
@@ -438,7 +448,18 @@ enterBtn.addEventListener('click',e=>{ if(!METAVERSE_URL){e.preventDefault();ale
 
 /* ---------- 눈 + 카메라 프레임 루프 ---------- */
 const c=document.getElementById('snow'), x=c.getContext('2d'), dpr=Math.min(1.5,devicePixelRatio||1);
-const rs=()=>{c.width=innerWidth*dpr;c.height=innerHeight*dpr}; rs(); addEventListener('resize',rs);
+// 원형 그라데이션 칠하기 (CSS radial-gradient 기본 크기 farthest-corner와 동일한 반지름)
+// 'transparent' 대신 같은 색 알파 0으로 끝내야 캔버스 보간이 CSS처럼 어두워지지 않음
+const radial=(cv,cx,cy,stops)=>{const g=cv.getContext('2d'),w=cv.width,h=cv.height,
+  gr=g.createRadialGradient(cx*w,cy*h,0,cx*w,cy*h,Math.hypot(Math.max(cx,1-cx)*w,Math.max(cy,1-cy)*h));
+  for(const [o,col] of stops) gr.addColorStop(o,col);
+  g.clearRect(0,0,w,h); g.fillStyle=gr; g.fillRect(0,0,w,h)};
+radial(document.querySelector('#star .bloom'),.5,.5,[[0,'#fffef8'],[.05,'rgba(255,246,222,.95)'],[.13,'rgba(255,232,180,.6)'],[.28,'rgba(255,220,150,.22)'],[.45,'rgba(255,214,140,.06)'],[.6,'rgba(255,214,140,0)']]);
+const glowC=document.querySelector('canvas#glow');   // id="glow"인 SVG 그라데이션이 먼저 있어서 getElementById 금지
+const rsGlow=()=>{const k=128/Math.max(innerWidth,innerHeight);   // 긴 변 128px, 화면 비율 유지 → 늘려도 원형
+  glowC.width=Math.max(1,Math.round(innerWidth*k)); glowC.height=Math.max(1,Math.round(innerHeight*k));
+  radial(glowC,.5,.55,[[0,'rgba(255,242,210,1)'],[.35,'rgba(255,226,160,.6)'],[.7,'rgba(255,226,160,0)']])};
+const rs=()=>{c.width=innerWidth*dpr;c.height=innerHeight*dpr;rsGlow()}; rs(); addEventListener('resize',rs);
 const flakes=Array.from({length:90},()=>({x:Math.random(),y:Math.random(),r:Math.random()*2+.6,s:Math.random()*.0015+.0006,d:Math.random()*6}));
 // 그림 세 장을 다 받아 디코딩까지 끝낸 뒤에 시작 (실패해도 멈춰 있지는 않게)
 let t0=null;
@@ -448,10 +469,13 @@ Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))).then(()=>setT
 (function loop(now){
   camera(t0==null?-1:(now-t0)/1000);
   x.clearRect(0,0,c.width,c.height); x.fillStyle='#fff'; x.strokeStyle='rgba(75,59,43,.25)'; x.lineWidth=dpr*.6;
+  x.beginPath();   // 눈송이 전부를 한 경로로 → fill/stroke 한 번씩
   for(const f of flakes){
     f.y+=f.s; if(f.y>1.02){f.y=-.02;f.x=Math.random()}
-    x.beginPath(); x.arc((f.x+Math.sin(now/1500+f.d)*.01)*c.width,f.y*c.height,f.r*dpr,0,7); x.fill(); x.stroke();
+    const fx=(f.x+Math.sin(now/1500+f.d)*.01)*c.width, fy=f.y*c.height, r=f.r*dpr;
+    x.moveTo(fx+r,fy); x.arc(fx,fy,r,0,7);
   }
+  x.fill(); x.stroke();
   requestAnimationFrame(loop);
 })(0);
 </script>
